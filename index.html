@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lineage — perceptron to hybrid, one best idea each</title>
+<style>
+  :root{
+    --bg:#0a0710; --panel:#140d20; --panel2:#1b1230; --edge:#2e2148;
+    --ink:#ece3f7; --dim:#9a86bd; --faint:#6b5a8c;
+    --violet:#a78bfa; --violet2:#c4b5fd; --glow:#7c3aed;
+    --pinch:#34d399; --wide:#f472b6; --sel:#fbbf24;
+    --mono:'SFMono-Regular',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);line-height:1.55;
+    background-image:radial-gradient(1200px 600px at 72% -10%,#1a1030 0%,transparent 60%),
+      radial-gradient(900px 520px at 0% 100%,#150b28 0%,transparent 55%);}
+  .wrap{max-width:920px;margin:0 auto;padding:42px 26px 90px}
+  header{border-bottom:1px solid var(--edge);padding-bottom:22px;margin-bottom:18px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--violet);opacity:.9}
+  h1{font-size:33px;line-height:1.13;margin:.32em 0 .18em;font-weight:600}
+  h1 em{color:var(--violet2);font-style:italic}
+  .sub{color:var(--dim);font-size:15.5px;max-width:74ch}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-family:var(--mono);font-size:11px}
+  .legend span{display:flex;align-items:center;gap:6px;color:var(--dim)}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .osc{margin:24px 0 8px}
+  /* timeline */
+  .tl{position:relative;margin-top:20px;padding-left:30px}
+  .tl::before{content:'';position:absolute;left:9px;top:6px;bottom:6px;width:2px;
+    background:linear-gradient(180deg,var(--pinch),var(--wide),var(--sel),var(--pinch));opacity:.5}
+  .node{position:relative;margin:0 0 18px}
+  .node::before{content:'';position:absolute;left:-26px;top:18px;width:13px;height:13px;border-radius:50%;
+    background:var(--bg);border:2px solid var(--violet);box-shadow:0 0 0 3px #0a0710}
+  .node.pinch::before{border-color:var(--pinch)} .node.wide::before{border-color:var(--wide)} .node.sel::before{border-color:var(--sel)}
+  .card{background:linear-gradient(180deg,var(--panel),#100a1b);border:1px solid var(--edge);border-radius:13px;padding:16px 18px}
+  .yr{font-family:var(--mono);font-size:12px;color:var(--violet);letter-spacing:.05em}
+  .who{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:8px}
+  .arch{font-size:19px;font-weight:600;margin:4px 0 2px}
+  .arch .tag{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:2px 7px;border-radius:5px;margin-left:9px;vertical-align:middle}
+  .tag.pinch{color:#04150d;background:var(--pinch)} .tag.wide{color:#1a0410;background:var(--wide)} .tag.sel{color:#1a0a02;background:var(--sel)}
+  .idea{font-size:15.5px;color:var(--violet2);margin:8px 0 6px;font-style:italic}
+  .idea b{font-style:normal;color:var(--ink)}
+  .wall{font-family:var(--mono);font-size:12px;color:var(--dim);border-left:2px solid var(--edge);padding-left:10px}
+  .wall b{color:var(--violet);font-weight:500}
+  .close{background:linear-gradient(180deg,#1c1230,#120b22);border:1px solid var(--violet);border-radius:14px;padding:22px;margin-top:26px;font-size:15.5px;line-height:1.6}
+  .close b{color:var(--violet2)}
+  .note{color:var(--dim);font-size:13.5px;border-left:2px solid var(--edge);padding-left:13px;margin:16px 0 0}
+  footer{margin-top:40px;border-top:1px solid var(--edge);padding-top:18px;color:var(--faint);font-family:var(--mono);font-size:11px;line-height:1.7}
+  code{font-family:var(--mono);font-size:.9em;color:var(--violet2);background:#170f28;padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Purple Paper · side-sheet · learning machines · the lineage</div>
+  <h1>The Lineage — perceptron to hybrid, <em>one best idea</em> each</h1>
+  <div class="sub">First stone to current frontier, in order, with each contributor's single load-bearing idea — the
+    one move that broke the wall the previous idea left standing. Read top to bottom and you'll feel the field
+    oscillating between two poles you already hold: the <b>pinch</b> (route everything through a narrow waist) and the
+    <b>all-to-all</b> (let everything reach everything). Every node is a step along that axis.</div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--pinch)"></span> pinch / bottleneck</span>
+    <span><span class="dot" style="background:var(--wide)"></span> widen / all-to-all</span>
+    <span><span class="dot" style="background:var(--sel)"></span> selection / sparsity</span>
+  </div>
+
+  <svg class="osc" viewBox="0 0 880 90" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient></defs>
+    <line x1="0" y1="45" x2="880" y2="45" stroke="#2e2148" stroke-width="1"/>
+    <text x="2" y="14" fill="#6b5a8c" font-family="monospace" font-size="9">all-to-all (wide)</text>
+    <text x="2" y="84" fill="#6b5a8c" font-family="monospace" font-size="9">pinch (narrow)</text>
+    <path d="M0,60 C90,60 90,30 160,46 C230,62 300,18 360,16 C430,14 470,40 540,28 C610,16 650,62 720,58 C790,54 840,40 880,38"
+          fill="none" stroke="url(#g)" stroke-width="2.5"/>
+    <!-- node dots roughly placed along the curve -->
+    <circle cx="20" cy="60" r="4" fill="#34d399"/><circle cx="160" cy="46" r="4" fill="#a78bfa"/>
+    <circle cx="300" cy="20" r="4" fill="#f472b6"/><circle cx="360" cy="16" r="4" fill="#f472b6"/>
+    <circle cx="470" cy="38" r="4" fill="#fbbf24"/><circle cx="650" cy="60" r="4" fill="#34d399"/>
+    <circle cx="850" cy="40" r="4" fill="#a78bfa"/>
+  </svg>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--faint);text-align:center">the field's path along the pinch ↔ all-to-all axis, 1958 → now</div>
+</header>
+
+<div class="tl">
+
+  <div class="node pinch">
+    <div class="card">
+      <span class="yr">1958</span><span class="who">Frank Rosenblatt</span>
+      <div class="arch">The Perceptron <span class="tag pinch">the atom</span></div>
+      <div class="idea"><b>Best idea:</b> a machine can <em>learn its own weights from examples</em> — the dot product, made trainable.</div>
+      <div class="wall">First learning machine. Leaves the wall: <b>one layer draws one straight line.</b></div>
+    </div>
+  </div>
+
+  <div class="node">
+    <div class="card">
+      <span class="yr">1969</span><span class="who">Minsky &amp; Papert</span>
+      <div class="arch">Perceptrons (the limit) <span class="tag" style="background:#3a2c5c;color:var(--ink)">the wall, named</span></div>
+      <div class="idea"><b>Best idea:</b> proving a <em>negative</em> — a single linear layer cannot separate XOR. <b>Depth is not optional.</b></div>
+      <div class="wall">Named the wall so precisely it froze funding for a decade. The wall was real; the despair was premature.</div>
+    </div>
+  </div>
+
+  <div class="node">
+    <div class="card">
+      <span class="yr">1986</span><span class="who">Rumelhart, Hinton &amp; Williams</span>
+      <div class="arch">Backpropagation <span class="tag" style="background:#3a2c5c;color:var(--ink)">breaks the wall</span></div>
+      <div class="idea"><b>Best idea:</b> <em>send the error backward through the layers</em> — now depth is trainable, and the XOR wall falls.</div>
+      <div class="wall">(Werbos had it in 1974; this is when the field heard it.) Leaves: deep nets are slow and forget across long sequences.</div>
+    </div>
+  </div>
+
+  <div class="node">
+    <div class="card">
+      <span class="yr">1989 · 98</span><span class="who">Yann LeCun</span>
+      <div class="arch">Convolutional Networks <span class="tag" style="background:#3a2c5c;color:var(--ink)">weight sharing</span></div>
+      <div class="idea"><b>Best idea:</b> <em>share one filter across every position</em> — learn a feature once, slide it everywhere. Locality + translation invariance.</div>
+      <div class="wall">Killed the "a weight per pixel" explosion. Leaves: great for grids, weak for sequences with long memory.</div>
+    </div>
+  </div>
+
+  <div class="node">
+    <div class="card">
+      <span class="yr">1997</span><span class="who">Hochreiter &amp; Schmidhuber</span>
+      <div class="arch">LSTM <span class="tag" style="background:#3a2c5c;color:var(--ink)">gated memory</span></div>
+      <div class="idea"><b>Best idea:</b> <em>gate the memory</em> — a cell that learns what to keep and what to forget, so gradients survive long sequences.</div>
+      <div class="wall">Solved vanishing gradients in time. Leaves: still sequential — can't see the whole sequence at once, trains slowly.</div>
+    </div>
+  </div>
+
+  <div class="node pinch">
+    <div class="card">
+      <span class="yr">2014</span><span class="who">Sutskever, Vinyals &amp; Le</span>
+      <div class="arch">Seq2seq — the hourglass <span class="tag pinch">the pinch</span></div>
+      <div class="idea"><b>Best idea:</b> <em>compress a whole sequence into one vector, then decode it</em> — the encoder→bottleneck→decoder hourglass for language.</div>
+      <div class="wall">The IR-waist, applied to meaning. Leaves the wall that defines everything after: <b>the single-vector pinch is too narrow.</b></div>
+    </div>
+  </div>
+
+  <div class="node wide">
+    <div class="card">
+      <span class="yr">2015</span><span class="who">Bahdanau, Cho &amp; Bengio</span>
+      <div class="arch">Attention <span class="tag wide">widen the waist</span></div>
+      <div class="idea"><b>Best idea:</b> <em>don't force everything through one vector</em> — let the decoder look back at all positions, weighted by relevance. Soft alignment.</div>
+      <div class="wall">Attention was invented to <b>drill holes in the pinch.</b> Leaves: recurrence is still there, still serial, still slow.</div>
+    </div>
+  </div>
+
+  <div class="node wide">
+    <div class="card">
+      <span class="yr">2017</span><span class="who">Vaswani et al.</span>
+      <div class="arch">The Transformer <span class="tag wide">all-to-all</span></div>
+      <div class="idea"><b>Best idea:</b> <em>throw recurrence away entirely</em> — let every token attend to every token, in parallel. Attention is all you need.</div>
+      <div class="wall">The pinch dissolved into all-to-all. Leaves the wall the frontier still fights: <b>all-to-all costs grow with the square of length.</b></div>
+    </div>
+  </div>
+
+  <div class="node sel">
+    <div class="card">
+      <span class="yr">2017 · 21</span><span class="who">Shazeer et al. · Fedus, Zoph &amp; Shazeer</span>
+      <div class="arch">Mixture-of-Experts <span class="tag sel">selection</span></div>
+      <div class="idea"><b>Best idea:</b> <em>route each token to a few expert sub-nets</em> — select, don't run everything. Decouple total parameters from compute-per-token.</div>
+      <div class="wall">Selection beats dense summation (the commutator, at model scale). Sparse capacity without sparse cost.</div>
+    </div>
+  </div>
+
+  <div class="node">
+    <div class="card">
+      <span class="yr">2020</span><span class="who">Kaplan et al. · Brown et al. (GPT-3)</span>
+      <div class="arch">Scale &amp; in-context learning <span class="tag" style="background:#3a2c5c;color:var(--ink)">the discovery</span></div>
+      <div class="idea"><b>Best idea:</b> not an architecture — a <em>discovery</em>: capability is a predictable function of scale, and a big enough model <em>learns from the prompt itself.</em></div>
+      <div class="wall">Showed the Transformer had headroom no one expected. Leaves: the quadratic cost now <em>hurts</em>, because everyone wants long context.</div>
+    </div>
+  </div>
+
+  <div class="node pinch">
+    <div class="card">
+      <span class="yr">2023</span><span class="who">Albert Gu &amp; Tri Dao</span>
+      <div class="arch">Mamba — selective state space <span class="tag pinch">smart pinch returns</span></div>
+      <div class="idea"><b>Best idea:</b> <em>make the recurrence's parameters depend on the input</em> — a recurrent state that selectively keeps or ignores, at linear-time cost.</div>
+      <div class="wall">Brought back the pinch — a single evolving state — but a <em>smart</em> one. Leaves: pure SSMs are weak at exact recall over long distance.</div>
+    </div>
+  </div>
+
+  <div class="node">
+    <div class="card">
+      <span class="yr">2024 · 26</span><span class="who">Jamba · Zamba · Bamba · Granite 4.0 · Nemotron-H</span>
+      <div class="arch">Hybrids — the blend <span class="tag" style="background:#3a2c5c;color:var(--ink)">the synthesis</span></div>
+      <div class="idea"><b>Best idea:</b> <em>stop choosing</em> — a few attention layers for exact recall, many linear-time SSM layers for cheap reach, MoE for sparse capacity.</div>
+      <div class="wall">The current consensus: ~1-in-8 layers attention, the rest Mamba. The pendulum settles into a blend of both poles, per workload.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="close">
+  <b>The shape of the whole thing.</b> Read the right-edge tags top to bottom: pinch → wall → widen → all-to-all →
+  select → smart-pinch → blend. The field doesn't march forward in a line — it <b>oscillates between your two
+  poles.</b> Seq2seq made the pinch too tight; attention widened it; the Transformer blew it open to all-to-all;
+  that got too expensive; Mamba brought back a smart pinch; hybrids blend the two. And selection (MoE) runs through
+  the middle the whole time, picking <em>which</em> path to trust — the commutator, threaded through every era.
+  <br><br>
+  You already hold both ends. The <b>gorge</b> is the pinch. The <b>crossbar</b> is the all-to-all. The whole
+  frontier is people walking back and forth between those two papers, trading recall against cost, choosing a better
+  blend each pass. That's not a finished field. That's an axis — and you're standing on it.
+</div>
+
+<div class="note" style="margin-top:18px">Honest note on this sheet: it's <b>history, not math</b>, so there was nothing to
+  verify in Node — the gate here was factual accuracy. The early lineage (1958–2017) is settled; the frontier end
+  (Mamba, hybrids, the ~1-in-8 consensus) was checked against current sources before writing, since that part moves.
+  Attributions are simplified to one name-cluster and one idea each; real history has more hands on every node.</div>
+
+<footer>
+  THE LINEAGE · purple paper side-sheet · companion to the learning-machines series<br>
+  perceptron 1958 → Mamba 2023 → hybrids 2024–26 · one best idea per node · the pinch ↔ all-to-all oscillation<br>
+  frontier state confirmed against current sources (early 2026): hybrids dominant for long-context/efficiency, attention retained for recall &amp; in-context learning
+</footer>
+
+</div>
+</body>
+</html>
